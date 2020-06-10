@@ -1,65 +1,13 @@
-# wrf_sp_eval: tools to perform WRF-Chem model evaluation in Sao Paulo State
+#!/usr/bin/env python3
+# -*- coding: utf-8 -*-
+"""
+Created on Wed Jun 10 16:37:44 2020
 
-These modules will help you to evaluate WRF/WRF-Chem model performance using
-CETESB air quality network information. The process of select stations, download
-CETESB Data and format it, calculate performance statistics and some plots, are
-automatized.
-
-* `qualar_py`: Download CETESB air quality station data, It's based on
-[qualR](https://github.com/quishqa/qualR) R package.
-* `data_preparation.py` : Prepare downloaded CETESB data and extract AQS data
-from the model.
-* `model_stats.py`: Performance statistics functions based on
-[Emery et al. 2017](https://www.tandfonline.com/doi/full/10.1080/10962247.2016.1265027) (Highly recommend paper!)
-
-## Installation
-
-To run the modules, you first need to install the requirements. We recommend to
-use [miniconda](https://docs.conda.io/en/latest/miniconda.html) or
-[anaconda](https://docs.anaconda.com/anaconda/install/.
-
-First, download or clone this respo by:
-```
-git clone https://github.com/quishqa/wrf_sp_eval.git
-```
-
-We recommend to create and enviroment to run these modules:
-```
-conda create --name wrf_sp
-conda activate wrf_sp
-```
-
-To facilitate the installation do:
-
-```
-conda config --add channels conda-forge
-```
-
-Then install the following packages:
-```
-conda install xarray
-conda install pandas
-conda install wrf-python
-conda install netCDF4
-conda install matplotlib
-```
-
-You are ready to go.
-
-
-## Input data
-Well, you need to have a `wrfout` file and the list with CETESB air quality station  information (AQS). The file  `cetesb2017_latlon.dat` contains information for
-the AQS for 2017 base year. If you are going to test these modules, we recommend
-to use `test.dat`, which has only five AQS.
-
-## How to use
-Examples of how to use these modules is shown in `model_eval_sp.py`:
-
-```python
+@author: quisqa
+"""
 
 import wrf as wrf
 from netCDF4 import Dataset
-# Loading the modules
 import wrf_sp_eval.data_preparation as dp
 import wrf_sp_eval.qualar_py as qr
 import wrf_sp_eval.model_stats as ms
@@ -165,9 +113,3 @@ pin_wrf = model_pol['Pinheiros']
 pin_obs = obs_pol['Pinheiros']
 
 ms.photo_profile_comparison(pin_wrf, pin_obs, save_fig=True, frmt=".png")
-
-```
-
-## One more thing
-* Thanks CETESB for the information
-* God Luck on your research!
