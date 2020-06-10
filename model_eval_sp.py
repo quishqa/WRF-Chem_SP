@@ -75,8 +75,8 @@ wrf_pol = dp.cetesb_from_wrf(cetesb_dom, ( o3_u, no_u, no2_u, co_sfc),
 # Remove spin_up time, extracting use same times in model and observation
 # dictionary
 
-model_met, obs_met = dp.model_eval_setup(wrf_met, cetesb_met, '2018-06-24')
-model_pol, obs_pol = dp.model_eval_setup(wrf_pol, cetesb_pol, '2018-06-24')
+model_met, obs_met = dp.model_eval_setup(wrf_met, cetesb_met, date_start='2018-06-24')
+model_pol, obs_pol = dp.model_eval_setup(wrf_pol, cetesb_pol, date_start='2018-06-24')
 
 
 # Calculating performance statistic for each staion
