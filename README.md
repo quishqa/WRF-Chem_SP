@@ -16,7 +16,7 @@ from the model.
 
 To run the modules, you first need to install the requirements. We recommend to
 use [miniconda](https://docs.conda.io/en/latest/miniconda.html) or
-[anaconda](https://docs.anaconda.com/anaconda/install/.
+[anaconda](https://docs.anaconda.com/anaconda/install/).
 
 First, download or clone this respo by:
 ```
@@ -53,7 +53,7 @@ the AQS for 2017 base year. If you are going to test these modules, we recommend
 to use `test.dat`, which has only five AQS.
 
 ## How to use
-Examples of how to use these modules is shown in `model_eval_sp.py`:
+Examples of how to use these modules is shown in `model_eval_sp.py`, you can use this file as a template for your experiments:
 
 ```python
 
@@ -125,7 +125,8 @@ wrf_pol = dp.cetesb_from_wrf(cetesb_dom, ( o3_u, no_u, no2_u, co_sfc),
 
 # Preparing model and observation dictionaries for model evaluation:
 # Remove spin_up time, extracting use same times in model and observation
-# dictionary
+# dictionary. Here 2018-06-24, represent the date after spin-up,
+# Like, from what date, should I start the model evaluation?
 
 model_met, obs_met = dp.model_eval_setup(wrf_met, cetesb_met, '2018-06-24')
 model_pol, obs_pol = dp.model_eval_setup(wrf_pol, cetesb_pol, '2018-06-24')
