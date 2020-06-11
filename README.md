@@ -52,16 +52,18 @@ Well, you need to have a `wrfout` file and the list with CETESB air quality stat
 the AQS for 2017 base year. If you are going to test these modules, we recommend
 to use `test.dat`, which has only five AQS.
 
+This text file is a `csv` file with AQS names, the codes in CETESB qualar system, and latitute and longitude (`name`, `code`, `lat`, and `lon`). You can select the AQS of your interest from `cetesb2017_latlon.dat`.
+
 ## How to use
 Examples of how to use these modules is shown in `model_eval_sp.py`, you can use this file as a template for your experiments. Let's try to
-explain the `model_eval_sp.py` parts.
+explain it.
 
 ### Loading modules
 
-The package that contains the modules is called `wrf_sp_eval`. So It has to be in the same working directory where you do the model eval.
-You'll also need `wrf-python`, and `Dataset` from `netCDF4` package.
-```python
+The package that contains the modules is called `wrf_sp_eval`. So It has to be in the same working directory where you do the model evalatuation.
+You'll also need `wrf-python` and `Dataset` (from `netCDF4` package).
 
+```python
 import wrf as wrf
 from netCDF4 import Dataset
 # Loading the modules
@@ -96,8 +98,8 @@ no2 = wrf.getvar(wrfout, "no2", timeidx=wrf.ALL_TIMES, method="cat")
 ```
 ### Pollutants and unit change
 
-Currently, we are working with surface variables. So, in this part We retrieve the concentration in the surface, and because CETESB data is in
- &mu;g/m<sup>3</sup> (CO is on ppm), we use `ppm_to_ugm3()` from `data_preparation` module, to make the tranformation using model Temperature and Pressure.
+Currently, we `wrf_sp_eval` works with surface variables. So, in this part we retrieve the concentration in the surface, and because CETESB data is in
+ &mu;g/m<sup>3</sup> (CO is in ppm), we use `ppm_to_ugm3()` function from `data_preparation` module, to make the unit tranformation using model Temperature and Pressure.
 
 ```python
 # Retrieving pollutants from surface
@@ -113,7 +115,7 @@ no2_u = dp.ppm_to_ugm3(no2_sfc, t2, psfc, 46)
 ```
 ### Downloading CETESB data for model evaluation
 
-To download CETESB data, you need to have an account. We only need information for the simulated period. We use `qualar_st_end_time()` function from `data_preparation` module to extract the start and end date from wrfout and to format them to be used in `qualar_py` module. Also, It's possible that not all CETESB AQS are in your WRF domain, so you can use `stations_in_domains()` function to select only the required AQS from your, in this case, text file `test.dat`.
+To download CETESB data, you need to have an account. We only need information for the simulated period. We use `qualar_st_end_time()` function from `data_preparation` module to extract the start and end date from wrfout and to format them to be used in `qualar_py` module. Also, It's possible that not all CETESB AQS are in your WRF domain, so you can use `stations_in_domains()` function to select only the required AQS from your domian, in this case, the text file with your AQS information is `test.dat` (you later from `cetesb2017_latlon.dat` can select the AQS of your interest).
 
 ```python
 # Downloading CETESB data for  model evaluation
@@ -128,7 +130,7 @@ start_date, end_date = dp.qualar_st_end_time(t2)
 # Loading List of stations and use only the stations inside wrfout
 cetesb_dom = dp.stations_in_domains("./test.dat", wrfout, t2)
 ```
-Then we use `download_load_cetesb_met()` or `download_load_cetesb_pol()` to download CETESB data. To avoid download  the data every time you need to run an experiment, these functions will check if you already downloaded the data. It look for files with this format: `met_{start_date}-{end_date}.pkl` or `met_{start_date}-{end_date}.pkl`. For example, here It looks for
+Then we use `download_load_cetesb_met()` or `download_load_cetesb_pol()` to download CETESB data. To avoid download  the data every time you perform the model evalatuation, these functions will check if you already downloaded the data. It look for files with this format: `met_{start_date}-{end_date}.pkl` or `met_{start_date}-{end_date}.pkl`. For example, here It looks for
 `met_20_06_2018-29_06_2018.pkl` and `pol_20_06_2018-29_06_2018.pkl`.
 
 ```python
@@ -142,9 +144,9 @@ cetesb_pol = dp.download_load_cetesb_pol(cetesb_dom, cetesb_login,
 
 ```
 ### Extracting AQS data from wrfout
-Now you need to extract point AQS from model results. You need a `DataFrame` with the information of the AQS in your domain (`cetesb_dom`), a tuple with the needed extracter wrfout variables, and because we are working with CETESB data, we tranform it to `America/Sao_Paulo` time zone.
+Now you need to extract point AQS data from model results. You need a `DataFrame` with the information of the AQS in your domain (`cetesb_dom`), a tuple with the needed extracted wrfout variables, and because we are working with CETESB data, we tranform it to `America/Sao_Paulo` time zone.
 The tuple with variables to extract could've been `(t2, o3_u, rh2)` or
-simply `(t2)`, in this case we split then in met and pol.
+simply `(t2)`, in this case we split then in met and pol variables.
 
 ```python
 # Extracting model result from station locations, note that the variables
@@ -155,21 +157,23 @@ wrf_met = dp.cetesb_from_wrf(cetesb_dom, (t2, rh2, wind),
 wrf_pol = dp.cetesb_from_wrf(cetesb_dom, (o3_u, no_u, no2_u, co_sfc),
                           to_local=True)
 ```
-### Getting model and observation data already
-When we do model evaluation, we need to extract the spin-up, and also ensure that there are the same number of model-observation pairs matched by the date. `model_eval_setup()` function does this job for us.
+### Getting model and observation data ready
+When we do model evaluation, we need to remove the spin-up, and also ensure that there are the same number of model-observation pairs matched by date. `model_eval_setup()` function does this job for us.  Here we discard the first three days so `date_start='2018-06-24'`
 
 
 ```python
-
 # Preparing model and observation dictionaries for model evaluation:
 # Remove spin_up time, extracting use same times in model and observation
 # dictionary. Here 2018-06-24, represent the date after spin-up,
-# Like, from what date, should I start the model evaluation?
+# Like, from what date should I start the model evaluation?
 
-model_met, obs_met = dp.model_eval_setup(wrf_met, cetesb_met, '2018-06-24')
-model_pol, obs_pol = dp.model_eval_setup(wrf_pol, cetesb_pol, '2018-06-24')
+model_met, obs_met = dp.model_eval_setup(wrf_met, cetesb_met, date_start='2018-06-24')
+model_pol, obs_pol = dp.model_eval_setup(wrf_pol, cetesb_pol, date_start='2018-06-24')
+```
+### Model evaluation (at last!)
+Once we got our model and observation data ready, we can calculate performance statistic for each AQS using `all_aqs_all_vars()` or the ovearll performance statistics with `global_stat()` functions from `model_stats` package. `csv=True` will export the output in `csv` file named like: `{var1}_{var2}_{varN}_stats.csv` or `{var1}_{var2}_{varN}_global_stats.csv`. In this example, we'll get `o3_no_no2_co_stats.csv`,  `t2_rh2_ws_wd_stats.csv` , `o3_no_no2_co_global_stats.csv`, and `t2_rh2_ws_wd_global_stats.csv`.
 
-
+```python
 # Calculating performance statistic for each staion
 pol_eval = ms.all_aqs_all_vars(wrf_pol, cetesb_pol, csv=True)
 met_eval = ms.all_aqs_all_vars(wrf_met, cetesb_met, csv=True)
@@ -177,8 +181,12 @@ met_eval = ms.all_aqs_all_vars(wrf_met, cetesb_met, csv=True)
 # Calculating global statistic for each variable
 pol_glob_eval = ms.global_stat(model_pol, obs_pol, csv=True)
 met_global_eval = ms.global_stat(model_met, obs_met, csv=True)
+```
 
+### Temporal series
+We can do some plots to check how the model did. `simple_vs_plot()` will give us a hand.
 
+```python
 # Time series comparison
 for k in model_met:
     ms.simple_vs_plot(model_met[k], obs_met[k], 't2', '$T2 \; (K)$',
@@ -197,13 +205,19 @@ for k in model_pol:
                       True, '.png')
     ms.simple_vs_plot(model_pol[k], obs_pol[k], 'co', '$CO \; (ppm)$',
                       True, '.png')
+```
+###  NO, NO<sub>2</sub> and O<sub>3</sub> diurnal profile
+To check how our NO<sub>X</sub> emissions are, one good excersise is to see the diurnal profile of NO, NO<sub>2</sub> and O<sub>3</sub>. `photo_profile_comparison()` shows a comparison between observation and model concentrations. Here is a comparison from Pinehiros AQS.
 
+```python
 # Photochemical profile comparison
 
 pin_wrf = model_pol['Pinheiros']
 pin_obs = obs_pol['Pinheiros']
 
-ms.photo_profile_comparison(pin_wrf, pin_obs, save_fig=True, frmt=".png")
+ms.photo_profile_comparison(pin_wrf, pin_obs,
+                            save_fig=True,
+                            frmt=".png")
 
 ```
 
