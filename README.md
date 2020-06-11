@@ -53,8 +53,13 @@ the AQS for 2017 base year. If you are going to test these modules, we recommend
 to use `test.dat`, which has only five AQS.
 
 ## How to use
-Examples of how to use these modules is shown in `model_eval_sp.py`, you can use this file as a template for your experiments:
+Examples of how to use these modules is shown in `model_eval_sp.py`, you can use this file as a template for your experiments. Let's try to
+explain the `model_eval_sp.py` parts.
 
+### Loading modules
+
+The package that contains the modules is called `wrf_sp_eval`. So It has to be in the same working directory where you do the model eval.
+You'll also need `wrf-python`, and `Dataset` from `netCDF4` package.
 ```python
 
 import wrf as wrf
@@ -63,8 +68,14 @@ from netCDF4 import Dataset
 import wrf_sp_eval.data_preparation as dp
 import wrf_sp_eval.qualar_py as qr
 import wrf_sp_eval.model_stats as ms
+```
 
+### Reading wrfout and extracting variables
 
+We use `Dataset` to load `wrfout` and `wrf-python` to extract the
+model variables that we want to evaluate.
+
+```python
 # Reading wrfout
 wrfout = Dataset("wrfout_d02_2018-06-21_00:00:00")
 
@@ -82,8 +93,13 @@ o3 = wrf.getvar(wrfout, "o3", timeidx=wrf.ALL_TIMES, method="cat")
 co = wrf.getvar(wrfout, "co", timeidx=wrf.ALL_TIMES, method="cat")
 no = wrf.getvar(wrfout, "no", timeidx=wrf.ALL_TIMES, method="cat")
 no2 = wrf.getvar(wrfout, "no2", timeidx=wrf.ALL_TIMES, method="cat")
+```
+### Pollutants and unit change
 
+Currently, we are working with surface variables. So, in this part We retrieve the concentration in the surface, and because CETESB data is in
+ &mu;g/m<sup>3</sup> (CO is on ppm), we use `ppm_to_ugm3()` from `data_preparation` module, to make the tranformation using model Temperature and Pressure.
 
+```python
 # Retrieving pollutants from surface
 o3_sfc = o3.isel(bottom_top=0)
 co_sfc = co.isel(bottom_top=0)
@@ -94,8 +110,12 @@ no2_sfc = no2.isel(bottom_top=0)
 o3_u = dp.ppm_to_ugm3(o3_sfc, t2, psfc, 48)
 no_u = dp.ppm_to_ugm3(no_sfc, t2, psfc, 30)
 no2_u = dp.ppm_to_ugm3(no2_sfc, t2, psfc, 46)
+```
+### Downloading CETESB data for model evaluation
 
+To download CETESB data, you need to have an account. We only need information for the simulated period. We use `qualar_st_end_time()` function from `data_preparation` module to extract the start and end date from wrfout and to format them to be used in `qualar_py` module. Also, It's possible that not all CETESB AQS are in your WRF domain, so you can use `stations_in_domains()` function to select only the required AQS from your, in this case, text file `test.dat`.
 
+```python
 # Downloading CETESB data for  model evaluation
 
 # CETESB qualR username and password
@@ -107,21 +127,39 @@ start_date, end_date = dp.qualar_st_end_time(t2)
 
 # Loading List of stations and use only the stations inside wrfout
 cetesb_dom = dp.stations_in_domains("./test.dat", wrfout, t2)
+```
+Then we use `download_load_cetesb_met()` or `download_load_cetesb_pol()` to download CETESB data. To avoid download  the data every time you need to run an experiment, these functions will check if you already downloaded the data. It look for files with this format: `met_{start_date}-{end_date}.pkl` or `met_{start_date}-{end_date}.pkl`. For example, here It looks for
+`met_20_06_2018-29_06_2018.pkl` and `pol_20_06_2018-29_06_2018.pkl`.
 
+```python
 # Downloading meteorological data and pollutant data from CETESB QUALAR
-cetesb_met = dp.download_load_cetesb_met(cetesb_dom, cetesb_login, cetesb_pass,
-                                      start_date, end_date)
-cetesb_pol = dp.download_load_cetesb_pol(cetesb_dom, cetesb_login, cetesb_pass,
-                                      start_date, end_date)
+cetesb_met = dp.download_load_cetesb_met(cetesb_dom, cetesb_login,
+                                         cetesb_pass, start_date,
+                                         end_date)
+cetesb_pol = dp.download_load_cetesb_pol(cetesb_dom, cetesb_login,
+                                         cetesb_pass, start_date,
+                                         end_date)
 
+```
+### Extracting AQS data from wrfout
+Now you need to extract point AQS from model results. You need a `DataFrame` with the information of the AQS in your domain (`cetesb_dom`), a tuple with the needed extracter wrfout variables, and because we are working with CETESB data, we tranform it to `America/Sao_Paulo` time zone.
+The tuple with variables to extract could've been `(t2, o3_u, rh2)` or
+simply `(t2)`, in this case we split then in met and pol.
+
+```python
 # Extracting model result from station locations, note that the variables
 # to extract is a tupple (). to_local=True is to tranform model UTC to
 # Sao Paulo local time
-wrf_met = dp.cetesb_from_wrf(cetesb_dom, ( t2, rh2, wind),
+wrf_met = dp.cetesb_from_wrf(cetesb_dom, (t2, rh2, wind),
                           to_local=True)
-wrf_pol = dp.cetesb_from_wrf(cetesb_dom, ( o3_u, no_u, no2_u, co_sfc),
+wrf_pol = dp.cetesb_from_wrf(cetesb_dom, (o3_u, no_u, no2_u, co_sfc),
                           to_local=True)
+```
+### Getting model and observation data already
+When we do model evaluation, we need to extract the spin-up, and also ensure that there are the same number of model-observation pairs matched by the date. `model_eval_setup()` function does this job for us.
 
+
+```python
 
 # Preparing model and observation dictionaries for model evaluation:
 # Remove spin_up time, extracting use same times in model and observation
