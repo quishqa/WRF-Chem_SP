@@ -44,6 +44,7 @@ conda install netCDF4
 conda install matplotlib
 conda install requests 
 conda install beautifulsoup4 
+conda install lxml
 ```
 
 You are ready to go.
