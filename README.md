@@ -42,6 +42,8 @@ conda install pandas
 conda install wrf-python
 conda install netCDF4
 conda install matplotlib
+conda install requests 
+conda install beautifulsoup4 
 ```
 
 You are ready to go.

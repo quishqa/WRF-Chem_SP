@@ -13,6 +13,7 @@ import pickle
 import wrf as wrf
 import pandas as pd
 import xarray as xr
+import wrf_sp_eval.qualar_py as qr 
 
 
 def ppm_to_ugm3(pol, t2, psfc, M):
