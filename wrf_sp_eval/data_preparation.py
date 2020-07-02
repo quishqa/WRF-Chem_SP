@@ -13,8 +13,7 @@ import pickle
 import wrf as wrf
 import pandas as pd
 import xarray as xr
-import wrf_sp_eval.qualar_py as qr 
-
+import wrf_sp_eval.qualar_py as qr
 
 def ppm_to_ugm3(pol, t2, psfc, M):
     '''
@@ -81,7 +80,8 @@ def wrf_var_retrieve(wrf_var, cetesb_dom, i):
 
 
     
-def wrf_station_retrieve(i, cetesb_dom, *args, to_local=False):
+def wrf_station_retrieve(i, cetesb_dom, *args, to_local=False,
+                         time_zone="America/Sao_Paulo"):
     '''
     Extract wrf parameter from one station
 
@@ -95,6 +95,8 @@ def wrf_station_retrieve(i, cetesb_dom, *args, to_local=False):
         wrfout extracted variables.
     to_local : Bool, optional
         Change the time zone to local. The default is False.
+    time_zone : str, optional
+        if to_local=true, transform date to local_time. The default is "America/Sao_Paulo".
 
     Returns
     -------
@@ -119,7 +121,12 @@ def wrf_station_retrieve(i, cetesb_dom, *args, to_local=False):
         wrf_sta['date'] = (
             wrf_sta['date']
             .dt.tz_localize('UTC')
-            .dt.tz_convert('America/Sao_Paulo'))        
+            .dt.tz_convert(time_zone))
+    else:
+        wrf_sta['date'] = (
+            wrf_sta['date']
+            .dt.tz_localize('UTC'))
+        
 
     wrf_sta.set_index('date', inplace=True)
         
@@ -307,3 +314,38 @@ def download_load_cetesb_pol(cetesb_dom, cetesb_login,
         pickle.dump(cet_dict, a_dict)
         a_dict.close()
     return cet_dict
+
+def read_aqs_obs(code, sep, ident='_obs.csv', to_local=True, 
+                 time_zone="America/Sao_Paulo"):
+    '''
+    Read AQS information from csv filrs
+
+    Parameters
+    ----------
+    code : int
+        AQS code.
+    sep : str
+        column separator.
+    ident : str, optional
+        aqs file name identifier. The default is '_obs.csv'.
+    to_local : Bool, optional
+        Localize date time zone. The default is True.
+    time_zone : str, optional
+        AQS date timezone. The default is "America/Sao_Paulo".
+
+    Returns
+    -------
+    aqs : pandas DataFrame
+        Data frame with aqs data.
+
+    '''
+    file_name = str(code) + ident
+    aqs = pd.read_csv(file_name, sep=sep)
+    aqs['date'] = pd.to_datetime(aqs['date'],
+                                 format="%Y-%m-%d %H:%M:%S")
+    if to_local:
+        aqs['date'] = aqs['date'].dt.tz_localize(time_zone)
+    else:
+        aqs['date'] = aqs['date'].dt.tz_localize("UTC")
+    aqs.set_index('date', inplace=True)
+    return aqs

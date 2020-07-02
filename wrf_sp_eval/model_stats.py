@@ -125,7 +125,7 @@ def normalized_mean_error(model_df, obs_df, var):
     if obs_df[var].dropna().empty:
         nme = np.nan
     else:
-        nme = ((model_df[var] - obs_df[var]).abs().sum() /
+        nme = ((model_df[var] - obs_df[var]).abs().sum() / 
                obs_df[var].sum() * 100)
     return nme
 
@@ -159,12 +159,12 @@ def wind_dir_diff(Mi, Oi):
             ans = wd_dif - 360
     else:
         ans = 0.0
-
+    
     return(ans)
-
+    
 def wind_dir_mb(model_df, obs_df, wd_name='wd'):
     '''
-    Calculates wind direction mean bias based in
+    Calculates wind direction mean bias based in 
     Reboredo et al. 2015
 
     Parameters
@@ -184,10 +184,10 @@ def wind_dir_mb(model_df, obs_df, wd_name='wd'):
     '''
     wd_df = pd.DataFrame({
         'mi': model_df[wd_name].values,
-        'oi': obs_df[wd_name].values})
+        'oi': obs_df[wd_name].values}) 
     dif = wd_df.apply(lambda row: wind_dir_diff(row['mi'], row['oi']),
                       axis=1)
-    wd_mb = dif.mean()
+    wd_mb = dif.mean()    
     return wd_mb
 
 
@@ -235,7 +235,7 @@ def all_stats(model_df, obs_df, var, to_df=False):
     var : str
         Name of variable.
     to_df : Bool, optional
-        Ouput in DataFrame. The default is False.
+        Ouput in DataFrame. The default is False.    
 
     Returns
     -------
@@ -261,7 +261,7 @@ def all_stats(model_df, obs_df, var, to_df=False):
             'Ostd': obs_df[var].std(),
             'Mstd': model_df[var].std(),
             'aqs': model_df.name.unique()[0]}
-
+    
     if to_df:
         results = pd.DataFrame(results, index=[var])
     return results
@@ -292,14 +292,44 @@ def all_var_stats_per_station(model_df, obs_df, to_df=False):
     results = {}
     for var in var_to_eval:
         results[var] = all_stats(model_df, obs_df, var)
-
+        
     if to_df:
-        results = pd.DataFrame.from_dict(results,
-                                         orient='index')
+        results = pd.DataFrame.from_dict(results, 
+                                         orient='index')        
+    return results
+
+def some_vars_stats_per_station(model_df, obs_df, var, to_df=False):
+    '''
+    Calculate all stats for each observation parameter
+
+    Parameters
+    ----------
+    model_df : pandas DataFrame
+        DataFrame with model output.
+    obs_df : pandas DataFrame
+        DataFrame with observations.
+    to_df : Bool, optional
+        DESCRIPTION. The default is False.
+
+    Returns
+    -------
+    results : dict or DataFrame
+        All Statistic for all observation variables.
+
+    '''
+    var_to_eval = var
+    results = {}
+    for var in var_to_eval:
+        results[var] = all_stats(model_df, obs_df, var)
+        
+    if to_df:
+        results = pd.DataFrame.from_dict(results, 
+                                         orient='index')        
     return results
 
 
-def all_aqs_all_vars(model_dic, obs_dic, to_df=True,
+
+def all_aqs_all_vars(model_dic, obs_dic, to_df=True, 
                      sort_pol = False, csv = False):
     '''
     Calculate all statistic for all variables for all
@@ -335,13 +365,53 @@ def all_aqs_all_vars(model_dic, obs_dic, to_df=True,
             result.sort_index(inplace=True)
         if csv:
             file_name = '_'.join(result.index.unique().values) + "_stats.csv"
-            result.to_csv(file_name, sep=",", index_label="pol")
+            result.to_csv(file_name, sep=",", index_label="pol")       
+        
+    return result
 
+def all_aqs_some_vars(model_dic, obs_dic, var, to_df=True, 
+                     sort_pol = False, csv = False):
+    '''
+    Calculate all statistic for all variables for all
+    evaluated stations
+
+    Parameters
+    ----------
+    model_dic : dict
+        Dictionaryy containing data frames with station data from model.
+    obs_dic : dict
+        Dictionaryy containing data frames with station data from aqs.
+    to_df : bool, optional
+        Return a data frame. The default is True.
+    sort_pol : bool, optional
+        when to_df=True output sorted by pol. The default is False.
+    csv : bool, optional
+        When to_df=Truem export it to csv. The default is False.
+
+    Returns
+    -------
+    result : pandas DataFrame or dict
+        All statistic for all variaables for all aqs.
+
+    '''
+    result = {}
+    for k in model_dic:
+        result[k] = some_vars_stats_per_station(model_dic[k],
+                                               obs_dic[k], var,
+                                               to_df=to_df)
+    if to_df:
+        result = pd.concat(result.values())
+        if sort_pol:
+            result.sort_index(inplace=True)
+        if csv:
+            file_name = '_'.join(result.index.unique().values) + "_stats.csv"
+            result.to_csv(file_name, sep=",", index_label="pol")       
+        
     return result
 
 def global_stat(model_dic, obs_dic, csv=False):
     '''
-    Calculates the global statistics
+    Calculates the global statistics  
 
     Parameters
     ----------
@@ -360,14 +430,43 @@ def global_stat(model_dic, obs_dic, csv=False):
     '''
     model_df = pd.concat(model_dic)
     obs_df =pd.concat(obs_dic)
-
+    
     stats = all_var_stats_per_station(model_df, obs_df, to_df=True)
     stats.drop(labels='aqs', axis=1, inplace=True)
     if csv:
-        file_name = '_'.join(stats.index.values) + "global_stats.csv"
+        file_name = '_'.join(stats.index.values) + "_global_stats.csv"
         stats.to_csv(file_name, sep=",", index_label='pol')
     return stats
 
+    
+def global_stat_some_vars(model_dic, obs_dic, var, csv=False):
+    '''
+    Calculates the global statistics  
+
+    Parameters
+    ----------
+    model_dic : dict
+        Dictionary containing data frames with station data from model.
+    obs_dic : dict
+        Dictionary containing data frames with station data from aqs.
+    csv : bool, optional
+        Export the value as csv. The default is False.
+
+    Returns
+    -------
+    stats : pandas DataFrame
+        Contain global statistics.
+
+    '''
+    model_df = pd.concat(model_dic)
+    obs_df =pd.concat(obs_dic)
+    
+    stats = some_vars_stats_per_station(model_df, obs_df,var, to_df=True)
+    stats.drop(labels='aqs', axis=1, inplace=True)
+    if csv:
+        file_name = '_'.join(stats.index.values) + "_global_stats.csv"
+        stats.to_csv(file_name, sep=",", index_label='pol')
+    return stats
 
 def simple_vs_plot(model_df, obs_df, var, ylab, save_fig=False, fmt=None):
     '''
@@ -402,13 +501,34 @@ def simple_vs_plot(model_df, obs_df, var, ylab, save_fig=False, fmt=None):
     ax.set_ylabel(ylab)
     ax.set_title(model_df.name.unique()[0])
     if save_fig:
-        file_name = (var + '_'+ model_df.name.unique()[0]
+        file_name = (var + '_'+ model_df.name.unique()[0] 
                      + fmt)
         plt.savefig(file_name, bbox_inches="tight", dpi=300)
         plt.clf()
 
 
 def photo_profile(df, main, ax = None, save_fig=False, frmt=None):
+    '''
+    Plot daily profile of NO, NO2 and O3 concentration.
+
+    Parameters
+    ----------
+    df : pandas DataFrame
+        Dataframe with columns of NO, NO2 and O3.
+    main : str
+        Plot title.
+    ax : matplotlib axes, optional
+        plot axe. The default is None.
+    save_fig : TYPE, optional
+        save the plot. The default is False.
+    frmt : str, optional
+        if save_fig=True, format of figure. The default is None.
+
+    Returns
+    -------
+    Plot.
+
+    '''
     df_d = df.groupby(df.index.hour).mean()
     if ax is None:
         ax = plt.gca()
@@ -419,7 +539,7 @@ def photo_profile(df, main, ax = None, save_fig=False, frmt=None):
     ax.set_ylabel('$\mu g / m^3$')
     ax.set_title(main)
     if save_fig:
-        file_name = ('photo' + '_'+ df.name.unique()[0]
+        file_name = ('photo' + '_'+ df.name.unique()[0] 
                      + frmt)
         plt.savefig(file_name, bbox_inches="tight", dpi=300)
         plt.clf()
@@ -427,22 +547,36 @@ def photo_profile(df, main, ax = None, save_fig=False, frmt=None):
 
 
 def photo_profile_comparison(model_df, obs_df, save_fig=False, frmt=None):
+    '''
+    Compare observation and model daily profile of NO, NO2 and O3
+    concentration.
+
+    Parameters
+    ----------
+    model_df : pandas DataFrame
+        Model DataFrame with columns NO, NO2 and O3.
+    obs_df : pandas DataFrame
+        Observations DataFrame with columns NO, NO2 and O3.
+    save_fig : Bool, optional
+        save the plot. The default is False.
+    frmt : str, optional
+        if save_fig=True, format of figure. The default is None.
+
+    Returns
+    -------
+    Plot.
+
+    '''
     fig, axes = plt.subplots(nrows=1, ncols=2, figsize=(12, 5))
     photo_profile(obs_df, "Observations", ax=axes[0])
     photo_profile(model_df, "WRF-Chem", ax=axes[1])
     fig.suptitle(model_df.name.unique()[0])
     if save_fig:
-        file_name = ('photo_comp' + '_'+ model_df.name.unique()[0]
+        file_name = ('photo_comp' + '_'+ model_df.name.unique()[0] 
                      + frmt)
         plt.savefig(file_name, bbox_inches="tight", dpi=300)
         plt.clf()
+    
+    
 
-
-
-# fig, axes = plt.subplots(nrows=1, ncols=2, figsize=(10,5))
-# ms.photo_profile(pin_obs, "Observations", ax=axes[0])
-# ms.photo_profile(pin_obs, "WRF-Chem", ax=axes[1])
-# fig.subtitle('Pinehiros')
-
-# ms.photo_profile(pin_obs, "Observations", ax=axes[0])
-# ax.set_ylim(500, 0)
+ 
