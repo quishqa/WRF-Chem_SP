@@ -11,6 +11,33 @@ import numpy as np
 import pandas as pd
 import matplotlib.pyplot as plt
 
+def complete_cases(model_df, obs_df, var):
+    '''
+    Create a dataframe with complete cases rows
+    for model evaluation for an evaluated variable
+
+    Parameters
+    ----------
+    model_df : pandas DataFrame
+        model results.
+    obs_df : pandas DataFrame
+        observations .
+    var : str
+        variable column name.
+
+    Returns
+    -------
+    df : pandas DataFrame
+        dataframe with no NaN values.
+
+    '''
+    df = pd.concat([model_df[var], obs_df[var]],
+                   axis=1,
+                   keys=["wrf", "obs"])
+    df.dropna(how="any", inplace=True)
+    return df
+
+
 def mean_bias(model_df, obs_df, var):
     '''
     Calculate Mean Bias
@@ -30,7 +57,8 @@ def mean_bias(model_df, obs_df, var):
         mean bias.
 
     '''
-    mb = model_df[var].mean() - obs_df[var].mean()
+    df = complete_cases(model_df, obs_df, var)
+    mb = df.wrf.mean() - df.obs.mean()
     return mb
 
 def mean_gross_error(model_df, obs_df, var):
@@ -52,7 +80,8 @@ def mean_gross_error(model_df, obs_df, var):
         Mean gross error.
 
     '''
-    me = (model_df[var] - obs_df[var]).abs().mean()
+    df = complete_cases(model_df, obs_df, var)
+    me = (df.wrf - df.obs).abs().mean()
     return me
 
 def root_mean_square_error(model_df, obs_df, var):
@@ -74,7 +103,8 @@ def root_mean_square_error(model_df, obs_df, var):
         root mean square error.
 
     '''
-    rmse = (((model_df[var] - obs_df[var])**2).mean())**0.5
+    df = complete_cases(model_df, obs_df, var)
+    rmse = (((df.wrf - df.obs)**2).mean())**0.5
     return rmse
 
 
@@ -100,7 +130,8 @@ def normalized_mean_bias(model_df, obs_df, var):
     if obs_df[var].dropna().empty:
         nmb = np.nan
     else:
-        nmb = (model_df[var] - obs_df[var]).sum() / obs_df[var].sum() * 100
+        df = complete_cases(model_df, obs_df, var)
+        nmb = (df.wrf - df.obs).sum() / df.obs.sum() * 100
     return nmb
 
 def normalized_mean_error(model_df, obs_df, var):
@@ -125,8 +156,9 @@ def normalized_mean_error(model_df, obs_df, var):
     if obs_df[var].dropna().empty:
         nme = np.nan
     else:
-        nme = ((model_df[var] - obs_df[var]).abs().sum() / 
-               obs_df[var].sum() * 100)
+        df = complete_cases(model_df, obs_df, var)
+        nme = ((df.wrf - df.obs).abs().sum() / 
+               df.obs.sum() * 100)
     return nme
 
 def wind_dir_diff(Mi, Oi):
@@ -185,6 +217,7 @@ def wind_dir_mb(model_df, obs_df, wd_name='wd'):
     wd_df = pd.DataFrame({
         'mi': model_df[wd_name].values,
         'oi': obs_df[wd_name].values}) 
+    wd_df.dropna(how="any", inplace=True)
     dif = wd_df.apply(lambda row: wind_dir_diff(row['mi'], row['oi']),
                       axis=1)
     wd_mb = dif.mean()    
@@ -213,6 +246,7 @@ def wind_dir_mage(model_df, obs_df, wd_name='wd'):
     wd_df = pd.DataFrame({
         'mi': model_df[wd_name].values,
         'oi': obs_df[wd_name].values})
+    wd_df.dropna(how="any", inplace=True)
     dif = wd_df.apply(lambda row: wind_dir_diff(row['mi'], row['oi']),
                       axis=1)
     if dif.isna().sum() == len(dif.index):
