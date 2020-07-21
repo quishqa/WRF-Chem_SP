@@ -218,9 +218,12 @@ def wind_dir_mb(model_df, obs_df, wd_name='wd'):
         'mi': model_df[wd_name].values,
         'oi': obs_df[wd_name].values}) 
     wd_df.dropna(how="any", inplace=True)
-    dif = wd_df.apply(lambda row: wind_dir_diff(row['mi'], row['oi']),
+    if wd_df.empty:
+        wd_mb = np.nan
+    else:
+        dif = wd_df.apply(lambda row: wind_dir_diff(row['mi'], row['oi']),
                       axis=1)
-    wd_mb = dif.mean()    
+        wd_mb = dif.mean()    
     return wd_mb
 
 
@@ -247,11 +250,11 @@ def wind_dir_mage(model_df, obs_df, wd_name='wd'):
         'mi': model_df[wd_name].values,
         'oi': obs_df[wd_name].values})
     wd_df.dropna(how="any", inplace=True)
-    dif = wd_df.apply(lambda row: wind_dir_diff(row['mi'], row['oi']),
-                      axis=1)
-    if dif.isna().sum() == len(dif.index):
+    if wd_df.empty:
         mage = np.nan
     else:
+        dif = wd_df.apply(lambda row: wind_dir_diff(row['mi'], row['oi']),
+                      axis=1)
         mage = dif.abs().mean()
     return mage
 
