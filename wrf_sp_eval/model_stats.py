@@ -280,13 +280,21 @@ def all_stats(model_df, obs_df, var, to_df=False):
         MB, RMSE, NMB, NME, R, Model and Obs means and std.
 
     '''
+    N_df = complete_cases(model_df, obs_df, var)
+    if N_df.empty:
+        N = np.nan
+    else:
+        N = len(N_df.index)
+
     if var == 'wd':
         results = {
+            'N': N,
             'MB': wind_dir_mb(model_df, obs_df),
             'ME': wind_dir_mage(model_df, obs_df),
             'aqs': model_df.name.unique()[0]}
     else:
         results = {
+            'N': N,
             'MB': mean_bias(model_df, obs_df, var),
             'ME': mean_gross_error(model_df, obs_df, var),
             'RMSE': root_mean_square_error(model_df, obs_df, var),
