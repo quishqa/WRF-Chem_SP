@@ -161,6 +161,35 @@ def normalized_mean_error(model_df, obs_df, var):
                df.obs.sum() * 100)
     return nme
 
+def index_of_aggrement(model_df, obs_df, var):
+    '''
+    Calculate index of Agreement (Willmontt, 1982 )
+
+    Parameters
+    ----------
+    model_df : pandas DataFrame
+        DataFrame with model output.
+    obs_df : Pandas DataFrame
+        DataFrame with observation.
+    var : str
+        Varaible name.
+
+    Returns
+    -------
+    ioa : numpy.float64
+        IOA.
+    '''
+    if obs_df[var].dropna().empty:
+        ioa = np.nan
+    else:
+        df = complete_cases(model_df, obs_df, var)
+        A = ((df.wrf - df.obs)**2).sum()
+        B = (((df.wrf - df.obs.mean()).abs() + 
+             (df.obs - df.obs.mean()).abs())**2).sum()
+        ioa = 1 - (A / B)
+    return ioa
+
+
 def wind_dir_diff(Mi, Oi):
     '''
     Difference between Wind directions based in its
@@ -301,6 +330,7 @@ def all_stats(model_df, obs_df, var, to_df=False):
             'NMB': normalized_mean_bias(model_df, obs_df, var),
             'NME': normalized_mean_error(model_df, obs_df, var),
             'R': model_df[var].corr(obs_df[var]),
+            'IOA': index_of_aggrement(model_df, obs_df, var), 
             'Om': obs_df[var].mean(),
             'Mm': model_df[var].mean(),
             'Ostd': obs_df[var].std(),
