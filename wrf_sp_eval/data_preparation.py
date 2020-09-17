@@ -48,8 +48,8 @@ def stations_in_domains(station_file, wrfout, wrfvar):
                               latitude=station.lat)
     station['x'] = station_xy[0]
     station['y'] = station_xy[1]
-    filter_dom = ((station.x >0) & (station.x < wrfvar.shape[2]) & 
-                  (station.y > 0) & (station.y < wrfvar.shape[1]))
+    filter_dom = ((station.x >0) & (station.x < wrfvar.west_east.shape[0]) & 
+                  (station.y > 0) & (station.y < wrfvar.south_north.shape[0]))
     station_dom = station[filter_dom]
     return station_dom
 
