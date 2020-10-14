@@ -543,6 +543,83 @@ def global_stat_some_vars(model_dic, obs_dic, var, csv=False):
         stats.to_csv(file_name, sep=",", index_label='pol')
     return stats
 
+
+def r_pearson_significance(n, r, alpha, deg_free = 2):
+    '''
+    Calculate Pearson's R significance. With a two-tail
+    test (non-directional).
+    Based on:
+    https://medium.com/@shandou/how-to-compute-confidence-interval-for-pearsons-r-a-brief-guide-951445b9cb2d
+
+    Parameters
+    ----------
+    n : int
+        sample size.
+    r : float
+        Pearson R.
+    alpha : float
+        test significant level.
+    deg_free : int, optional
+        degrees of freedom. The default is 2.
+
+    Returns
+    -------
+    t_cal : float
+        Calcualted t value.
+    t_cri : float
+        Critical t value.
+
+    '''
+    
+    t_cri = scipy.stats.t.ppf(1 - alpha / 2.0, deg_free)
+    t_cal = r * np.sqrt(n - 2) / np.sqrt(1 - r**2)
+    if t_cal > t_cri:
+        print("Significant linear relationship")
+    else:
+        print("No significant linear relationship")
+    return (t_cal, t_cri)
+
+
+def r_pearson_confidence_interval(n, r, alpha):
+    '''
+    Calculate Pearson's R confidence intervals, 
+    using two-tail test.
+    Based on:
+    http://onlinestatbook.com/2/estimation/correlation_ci.html
+    https://medium.com/@shandou/how-to-compute-confidence-interval-for-pearsons-r-a-brief-guide-951445b9cb2d
+
+    Parameters
+    ----------
+    n : int
+        sample size.
+    r : float
+        Pearson's R.
+    alpha : float
+        confidence level (e.g. if 95% then alpha = 0.05).
+
+    Returns
+    -------
+    r_lower : float
+        lower CI .
+    r_upper : float
+        upper CI.
+
+    '''
+    alph = 0.05 / 2.0 # two-tail test:
+    z_critical = scipy.stats.norm.ppf(1 - alph)
+    # r to z' by Fisher's z' transform:
+    z_prime =0.5 * np.log((1 + r) / (1 - r))
+    # Sample standard error:
+    se = 1 / np.sqrt(n - 3)
+    # Computing CI using z':
+    ci_lower = z_prime - z_critical * se
+    ci_upper = z_prime + z_critical * se
+    # Converting z' back to r values:
+    r_lower = np.tanh(ci_lower)
+    r_upper = np.tanh(ci_upper)
+    return (r_lower, r_upper)
+
+
 def simple_vs_plot(model_df, obs_df, var, ylab, save_fig=False, fmt=None):
     '''
     Temporal serie of model and observe variable
