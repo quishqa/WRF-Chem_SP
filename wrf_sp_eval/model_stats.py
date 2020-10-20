@@ -333,7 +333,7 @@ def all_stats(model_df, obs_df, var, to_df=False):
             'RMSE': root_mean_square_error(model_df, obs_df, var),
             'NMB': normalized_mean_bias(model_df, obs_df, var),
             'NME': normalized_mean_error(model_df, obs_df, var),
-            'R': model_df[var].corr(obs_df[var]),
+            'R': model_df[var].corr(obs_df[var].astype(float)),
             'IOA': index_of_aggrement(model_df, obs_df, var), 
             'aqs': model_df.name.unique()[0]}
     
