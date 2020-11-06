@@ -20,7 +20,7 @@ use [miniconda](https://docs.conda.io/en/latest/miniconda.html) or
 
 First, download or clone this respo by:
 ```
-git clone https://github.com/quishqa/wrf_sp_eval.git
+git clone https://github.com/quishqa/WRF-Chem_SP.git 
 ```
 
 We recommend to create and enviroment to run these modules:
