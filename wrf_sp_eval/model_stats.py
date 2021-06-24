@@ -189,6 +189,15 @@ def index_of_aggrement(model_df, obs_df, var):
         ioa = 1 - (A / B)
     return ioa
 
+def FAC2(model_df, obs_df, var):
+    if obs_df[var].dropna().empty:
+        fac2 = np.nan
+    else:
+        df = complete_cases(model_df, obs_df, var)
+        ratio = df.wrf / df.obs
+        cases = len(ratio.index)
+        fac2 = sum((ratio >= 0.5) & (ratio <= 2.0)) / cases
+    return fac2
 
 def wind_dir_diff(Mi, Oi):
     '''
@@ -334,7 +343,9 @@ def all_stats(model_df, obs_df, var, to_df=False):
             'NMB': normalized_mean_bias(model_df, obs_df, var),
             'NME': normalized_mean_error(model_df, obs_df, var),
             'R': model_df[var].corr(obs_df[var].astype(float)),
+            'R2': (model_df[var].corr(obs_df[var].astype(float)))^2,
             'IOA': index_of_aggrement(model_df, obs_df, var), 
+            'FAC2': FAC2(model_df, obs_df, var)
             'aqs': model_df.name.unique()[0]}
     
     if to_df:
