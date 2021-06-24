@@ -189,7 +189,7 @@ def index_of_aggrement(model_df, obs_df, var):
         ioa = 1 - (A / B)
     return ioa
 
-def FAC2(model_df, obs_df, var):
+def fraction_factor2(model_df, obs_df, var):
     if obs_df[var].dropna().empty:
         fac2 = np.nan
     else:
@@ -343,9 +343,9 @@ def all_stats(model_df, obs_df, var, to_df=False):
             'NMB': normalized_mean_bias(model_df, obs_df, var),
             'NME': normalized_mean_error(model_df, obs_df, var),
             'R': model_df[var].corr(obs_df[var].astype(float)),
-            'R2': (model_df[var].corr(obs_df[var].astype(float)))^2,
+            'R2': (model_df[var].corr(obs_df[var].astype(float)))**2,
             'IOA': index_of_aggrement(model_df, obs_df, var), 
-            'FAC2': FAC2(model_df, obs_df, var)
+            'FAC2': fraction_factor2(model_df, obs_df, var),
             'aqs': model_df.name.unique()[0]}
     
     if to_df:
